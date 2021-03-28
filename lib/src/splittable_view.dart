@@ -27,7 +27,9 @@ class SplittableView extends StatefulWidget {
     this.onSplittingEnd,
     this.onResetWeights,
     this.children = const <SplittableChild>[],
-  }) : super(key: key);
+  })  : assert(children.length > 1,
+            'SplittableView requires at least 2 children.'),
+        super(key: key);
 
   /// The axis along which the split executes.
   final Axis splitDirection;
@@ -97,8 +99,6 @@ class _SplittableViewState extends State<SplittableView> {
   Widget build(BuildContext context) {
     var mediaQuery = MediaQuery.of(context);
     var splitterCount = widget.children.length - 1;
-    //var splitter = Splitter(direction: widget.splitDirection);
-    //var splitterThickness = splitter.preferredSize.shortestSide;
     var splitterThickness = SplitterTheme.of(context).space!;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -251,7 +251,6 @@ class _SplittableViewState extends State<SplittableView> {
 }
 
 /// Widget which splits two or more widgets in [SplittableView].
-//class Splitter extends StatelessWidget implements PreferredSizeWidget {
 class Splitter extends StatelessWidget {
   /// Creates a splitter widget.
   const Splitter({
@@ -262,15 +261,15 @@ class Splitter extends StatelessWidget {
   /// The axis along which the split executes.
   final Axis direction;
 
-  /// Default slider space.
-  //static const _space = 6.0;
-
   @override
   Widget build(BuildContext context) {
     var splitterTheme = SplitterTheme.of(context);
     var preferredSize = direction.isHorizonal
         ? Size.fromHeight(splitterTheme.space!)
         : Size.fromWidth(splitterTheme.space!);
+    var effectiveColor = splitterTheme.color ??
+        DividerTheme.of(context).color ??
+        Theme.of(context).dividerColor;
     return Container(
       alignment: Alignment.center,
       height: preferredSize.height,
@@ -280,8 +279,7 @@ class Splitter extends StatelessWidget {
           // Horizontal divider
           if (direction.isHorizonal)
             Divider(
-              color: splitterTheme.color,
-              //height: splitterTheme.space,
+              color: effectiveColor,
               thickness: splitterTheme.thickness,
               indent: splitterTheme.indent,
               endIndent: splitterTheme.endIndent,
@@ -289,8 +287,7 @@ class Splitter extends StatelessWidget {
           // Vartical divider
           if (direction.isVertical)
             VerticalDivider(
-              color: splitterTheme.color,
-              //width: splitterTheme.space,
+              color: effectiveColor,
               thickness: splitterTheme.thickness,
               indent: splitterTheme.indent,
               endIndent: splitterTheme.endIndent,
@@ -299,12 +296,11 @@ class Splitter extends StatelessWidget {
           if (splitterTheme.enableIcon!)
             () {
               var rect = direction.isHorizonal
-                  ? const Rect.fromLTRB(0.0, -8.2, 0.0, 0.0)
+                  ? const Rect.fromLTRB(0.0, -4.0, 0.0, 0.0)
                   : const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0);
               Widget icon = Icon(
                 Icons.drag_handle,
-                size: 22.0,
-                color: Theme.of(context).dividerColor,
+                color: effectiveColor,
               );
               if (direction.isVertical) {
                 icon = RotationTransition(
@@ -326,11 +322,6 @@ class Splitter extends StatelessWidget {
       ),
     );
   }
-
-  // @override
-  // Size get preferredSize => direction == Axis.horizontal
-  //     ? Size.fromHeight(_space)
-  //     : Size.fromWidth(_space);
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) =>
