@@ -4,5 +4,5 @@
 
 library splittable_view;
 
-export 'src/basic_types.dart';
+export 'src/theme.dart';
 export 'src/splittable_view.dart';

@@ -5,24 +5,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Provides a splittable `child` with its weight.
-@immutable
-class SplittableChild {
-  /// Creates instane of splittable `child` with `flex`.
-  const SplittableChild({
-    required this.child,
-    this.flex = 1,
-  }) : assert(flex > 0);
-
-  /// The widget below this widget in the tree.
-  ///
-  /// {@macro flutter.widgets.ProxyWidget.child}
-  final Widget child;
-
-  /// Contains weight of this split child in natural numbers.
-  final int flex;
-}
-
 /// Defines the visual properties of [Splitter].
 ///
 /// Descendant widgets obtain the current [SplitterThemeData] object using

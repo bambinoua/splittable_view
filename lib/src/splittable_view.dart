@@ -6,27 +6,90 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import 'package:splittable_view/src/basic_types.dart';
+import 'package:splittable_view/src/theme.dart';
 import 'package:splittable_view/src/enums.dart';
 import 'package:splittable_view/src/extensions.dart';
+import 'package:splittable_view/src/splitter.dart';
 
-/// A widget that positions its children relative to the edges of its box.
+/// A widget that displays its children in a space which is splittable horizontally.
 ///
+/// ```dart
+/// SplittableRow(
+///   initialWeights: [0.5, 0.5],
+///   onSplittingEnd: (weights) => _saveWeights(weight),
+///   onResetWeights: () => _resetWeight(),
+///   children: [
+///     ListView(),
+///     ListView(),
+///   ],
+/// ),
+/// ```
+///
+class SplittableRow extends _SplittableView {
+  const SplittableRow({
+    Key? key,
+    List<double>? initialWeights,
+    WidgetBuilder? splitterBuilder,
+    ValueSetter<List<double>>? onSplittingEnd,
+    VoidCallback? onResetWeights,
+    List<Widget> children = const <Widget>[],
+  }) : super(
+            key: key,
+            splitDirection: Axis.vertical,
+            initialWeights: initialWeights,
+            splitterBuilder: splitterBuilder,
+            onSplittingEnd: onSplittingEnd,
+            onResetWeights: onResetWeights,
+            children: children);
+}
 
-/// A widget that displays its children in a vertical array which is splittable.
+/// A widget that displays its children in a space which is splittable vertically.
+///
+/// ```dart
+/// SplittableColumn(
+///   initialWeights: [0.33, 0.33, 0.34],
+///   onSplittingEnd: (weights) => _saveWeights(weight),
+///   onResetWeights: () => _resetWeight(),
+///   children: [
+///     ListView(),
+///     ListView(),
+///     Container(),
+///   ],
+/// ),
+/// ```
+///
+class SplittableColumn extends _SplittableView {
+  const SplittableColumn({
+    Key? key,
+    List<double>? initialWeights,
+    WidgetBuilder? splitterBuilder,
+    ValueSetter<List<double>>? onSplittingEnd,
+    VoidCallback? onResetWeights,
+    List<Widget> children = const <Widget>[],
+  }) : super(
+            key: key,
+            splitDirection: Axis.horizontal,
+            initialWeights: initialWeights,
+            splitterBuilder: splitterBuilder,
+            onSplittingEnd: onSplittingEnd,
+            onResetWeights: onResetWeights,
+            children: children);
+}
+
+/// A widget that displays its children in a space which is splittable.
 ///
 /// This class is useful if you want to place several children along the specied
-/// axis and change their dimension (vertical or horizontal) using split widget.
-class SplittableView extends StatefulWidget {
+/// axis and change their dimensions (vertical or horizontal) using split widget.
+class _SplittableView extends StatefulWidget {
   /// Creates a splittable view of child widgets.
-  const SplittableView({
+  const _SplittableView({
     Key? key,
     required this.splitDirection,
-    this.initialWeights = const <double>[],
+    this.initialWeights,
     this.splitterBuilder,
     this.onSplittingEnd,
     this.onResetWeights,
-    this.children = const <SplittableChild>[],
+    this.children = const <Widget>[],
   })  : assert(children.length > 1,
             'SplittableView requires at least 2 children.'),
         super(key: key);
@@ -35,7 +98,7 @@ class SplittableView extends StatefulWidget {
   final Axis splitDirection;
 
   /// The data that will be used for initial splitter(s) positions.
-  final List<double> initialWeights;
+  final List<double>? initialWeights;
 
   /// The `splitterBuilder` callback will be used for splitter customization.
   final WidgetBuilder? splitterBuilder;
@@ -55,40 +118,32 @@ class SplittableView extends StatefulWidget {
   /// each of the child widgets, so that the framework can match old
   /// configurations to new configurations and maintain the underlying render
   /// objects.
-  final List<SplittableChild> children;
+  final List<Widget> children;
 
   @override
   _SplittableViewState createState() => _SplittableViewState();
 }
 
-class _SplittableViewState extends State<SplittableView> {
-  /// Count of splittable flexes to calculate split weights.
-  int flexCount = 0;
-
-  /// List of split weights.
-  List<double> weights = [];
+class _SplittableViewState extends State<_SplittableView> {
+  /// List of children split weights.
+  late List<double> weights;
 
   @override
   void initState() {
     super.initState();
-    // Calculate the number of flex weights specified in children.
-    flexCount = widget.children
-        .map((child) => child.flex)
-        .reduce((amount, flex) => amount + flex);
-
     // Get stored weights if they are.
-    weights = widget.initialWeights;
-
+    weights = widget.initialWeights ?? <double>[];
     // Or initialize/reset weights.
     if (weights.isEmpty) {
       _initWeights();
     } else if (weights.length != widget.children.length) {
       _resetWeights();
     }
+    print(weights);
   }
 
   @override
-  void didUpdateWidget(covariant SplittableView oldWidget) {
+  void didUpdateWidget(covariant _SplittableView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.children.length != oldWidget.children.length) {
       _resetWeights();
@@ -131,7 +186,7 @@ class _SplittableViewState extends State<SplittableView> {
                 top: rect.top,
                 right: rect.right,
                 bottom: rect.bottom,
-                child: entry.value.child,
+                child: entry.value,
               );
             }).toList(),
             // Splitters
@@ -160,7 +215,9 @@ class _SplittableViewState extends State<SplittableView> {
                     cursor: cursor,
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
-                      child: Splitter(direction: widget.splitDirection),
+                      child: widget.splitterBuilder == null
+                          ? Splitter(direction: widget.splitDirection)
+                          : widget.splitterBuilder!(context),
                       onVerticalDragEnd: widget.splitDirection.isHorizonal
                           ? (details) => _onDradEnd()
                           : null,
@@ -228,10 +285,8 @@ class _SplittableViewState extends State<SplittableView> {
 
   /// Calculate the split weight for each child.
   void _initWeights() {
-    weights = widget.children
-        .map((child) => child.flex)
-        .map((flex) => flex / flexCount)
-        .toList();
+    weights = List.generate(
+        widget.children.length, (index) => 1 / widget.children.length);
   }
 
   /// Resets split weights.
@@ -248,82 +303,4 @@ class _SplittableViewState extends State<SplittableView> {
       widget.onSplittingEnd!(weights);
     }
   }
-}
-
-/// Widget which splits two or more widgets in [SplittableView].
-class Splitter extends StatelessWidget {
-  /// Creates a splitter widget.
-  const Splitter({
-    Key? key,
-    required this.direction,
-  }) : super(key: key);
-
-  /// The axis along which the split executes.
-  final Axis direction;
-
-  @override
-  Widget build(BuildContext context) {
-    var splitterTheme = SplitterTheme.of(context);
-    var preferredSize = direction.isHorizonal
-        ? Size.fromHeight(splitterTheme.space!)
-        : Size.fromWidth(splitterTheme.space!);
-    var effectiveColor = splitterTheme.color ??
-        DividerTheme.of(context).color ??
-        Theme.of(context).dividerColor;
-    return Container(
-      alignment: Alignment.center,
-      height: preferredSize.height,
-      width: preferredSize.width,
-      child: Stack(
-        children: [
-          // Horizontal divider
-          if (direction.isHorizonal)
-            Divider(
-              color: effectiveColor,
-              thickness: splitterTheme.thickness,
-              indent: splitterTheme.indent,
-              endIndent: splitterTheme.endIndent,
-            ),
-          // Vartical divider
-          if (direction.isVertical)
-            VerticalDivider(
-              color: effectiveColor,
-              thickness: splitterTheme.thickness,
-              indent: splitterTheme.indent,
-              endIndent: splitterTheme.endIndent,
-            ),
-          // Icon
-          if (splitterTheme.enableIcon!)
-            () {
-              var rect = direction.isHorizonal
-                  ? const Rect.fromLTRB(0.0, -4.0, 0.0, 0.0)
-                  : const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0);
-              Widget icon = Icon(
-                Icons.drag_handle,
-                color: effectiveColor,
-              );
-              if (direction.isVertical) {
-                icon = RotationTransition(
-                  turns: const AlwaysStoppedAnimation(0.25),
-                  child: icon,
-                );
-              }
-              return Positioned.fill(
-                left: rect.left,
-                top: rect.top,
-                right: rect.right,
-                bottom: rect.bottom,
-                child: Container(
-                  child: icon,
-                ),
-              );
-            }(),
-        ],
-      ),
-    );
-  }
-
-  @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) =>
-      'Slider (direction: ${describeEnum(direction)})';
 }
