@@ -4,12 +4,11 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
-/// Provides weight data for this `child`.
+/// Provides a splittable `child` with its weight.
 @immutable
 class SplittableChild {
-  /// Creates instane of split `child` with `flex`.
+  /// Creates instane of splittable `child` with `flex`.
   const SplittableChild({
     required this.child,
     this.flex = 1,
@@ -40,11 +39,12 @@ class SplitterThemeData extends DividerThemeData {
     double endIndent = 0.0,
     this.enableIcon = true,
   }) : super(
-            color: color,
-            space: space,
-            thickness: thickness,
-            indent: indent,
-            endIndent: endIndent);
+          color: color,
+          space: space,
+          thickness: thickness,
+          indent: indent,
+          endIndent: endIndent,
+        );
 
   /// Indicates whether icon is enabled on [Splitter].
   final bool? enableIcon;
@@ -52,30 +52,25 @@ class SplitterThemeData extends DividerThemeData {
   /// Creates a copy of this object but with the given fields replaced with the
   /// new values.
   @override
-  SplitterThemeData copyWith(
-      {Color? color,
-      double? space,
-      double? thickness,
-      double? indent,
-      double? endIndent,
-      bool? enableIcon}) {
-    return copyWith(
-      color: color ?? this.color,
-      space: space ?? this.space,
-      thickness: thickness ?? this.thickness,
-      indent: indent ?? this.indent,
-      endIndent: endIndent ?? endIndent,
-      enableIcon: enableIcon ?? enableIcon,
-    );
-  }
+  SplitterThemeData copyWith({
+    Color? color,
+    double? space,
+    double? thickness,
+    double? indent,
+    double? endIndent,
+    bool? enableIcon,
+  }) =>
+      copyWith(
+        color: color ?? this.color,
+        space: space ?? this.space,
+        thickness: thickness ?? this.thickness,
+        indent: indent ?? this.indent,
+        endIndent: endIndent ?? endIndent,
+        enableIcon: enableIcon ?? enableIcon,
+      );
 
   @override
-  int get hashCode {
-    return hashValues(
-      super.hashCode,
-      enableIcon,
-    );
-  }
+  int get hashCode => hashValues(super.hashCode, enableIcon);
 
   @override
   bool operator ==(Object other) {
@@ -100,6 +95,8 @@ class SplitterThemeData extends DividerThemeData {
 
 /// An inherited widget that defines the configuration for
 /// [Splitter]s, [SplitterDivider]s in this widget's subtree.
+///
+/// The splitter theme is honored by [Splitter] widget.
 class SplitterTheme extends InheritedTheme {
   /// Creates a splitter theme that controls the configurations for
   /// [Splitter]s, [SplitterDivider]s in its widget subtree.
