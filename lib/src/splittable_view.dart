@@ -128,6 +128,12 @@ class _SplittableViewState extends State<_SplittableView> {
   /// List of children split weights.
   late List<double> weights;
 
+  /// Offset of left top corner of splittable area.
+  late Offset leftTop;
+
+  /// Contains delta in pixels from splitter left edge to tapped local `dx`.
+  late double tapDelta = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -151,7 +157,6 @@ class _SplittableViewState extends State<_SplittableView> {
 
   @override
   Widget build(BuildContext context) {
-    var mediaQuery = MediaQuery.of(context);
     var splitterCount = widget.children.length - 1;
     var splitterSpace = SplitterTheme.of(context).space!;
     var splitterCursor = widget.splitDirection.isHorizonal
@@ -159,11 +164,6 @@ class _SplittableViewState extends State<_SplittableView> {
         : SystemMouseCursors.resizeLeftRight;
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Get the diffence between viewport height and available height.
-        // This is useful when [MaterialApp] contains [AppBar].
-        var minMargin = widget.splitDirection.isHorizonal
-            ? mediaQuery.size.height - constraints.maxHeight
-            : 0.0;
         // Effective dimension is a dimension without splitter thicknesses.
         var effectiveDimension = (widget.splitDirection.isHorizonal
                 ? constraints.maxHeight
@@ -211,30 +211,43 @@ class _SplittableViewState extends State<_SplittableView> {
                   right: rect.right,
                   bottom: rect.bottom,
                   child: MouseRegion(
+                    opaque: false,
                     cursor: splitterCursor,
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
+                      onVerticalDragDown: widget.splitDirection.isHorizonal
+                          ? (details) {
+                              leftTop = _getLeftTopOffset();
+                              tapDelta = details.localPosition.dy;
+                            }
+                          : null,
                       onVerticalDragEnd: widget.splitDirection.isHorizonal
                           ? (details) => _onDradEnd()
                           : null,
                       onVerticalDragUpdate: widget.splitDirection.isHorizonal
                           ? (details) {
-                              setState(() {
-                                var effectiveDy =
-                                    details.globalPosition.dy - minMargin;
-                                if (effectiveDy > 0 &&
-                                    effectiveDy <= constraints.maxHeight) {
-                                  var skippedWeight = _getFoldedWeight(
-                                      index, IterableModifier.take);
-                                  var effectiveWeight =
-                                      effectiveDy / constraints.maxHeight -
-                                          skippedWeight;
-                                  var delta = weights[index] - effectiveWeight;
+                              var effectiveDy = details.globalPosition.dy -
+                                  leftTop.dy -
+                                  tapDelta;
+                              if (effectiveDy > 0 &&
+                                  effectiveDy <= constraints.maxHeight) {
+                                var skippedWeight = _getFoldedWeight(
+                                    index, IterableModifier.take);
+                                var effectiveWeight =
+                                    effectiveDy / constraints.maxHeight -
+                                        skippedWeight;
+                                var delta = weights[index] - effectiveWeight;
+                                setState(() {
                                   weights[index] = effectiveWeight;
-                                  weights[index + 1] =
-                                      weights[index + 1] + delta;
-                                }
-                              });
+                                  weights[index + 1] += delta;
+                                });
+                              }
+                            }
+                          : null,
+                      onHorizontalDragDown: widget.splitDirection.isVertical
+                          ? (details) {
+                              leftTop = _getLeftTopOffset();
+                              tapDelta = details.localPosition.dx;
                             }
                           : null,
                       onHorizontalDragEnd: widget.splitDirection.isVertical
@@ -242,23 +255,21 @@ class _SplittableViewState extends State<_SplittableView> {
                           : null,
                       onHorizontalDragUpdate: widget.splitDirection.isVertical
                           ? (details) {
-                              setState(() {
-                                var effectiveDx = details.globalPosition.dx -
-                                    context.size!.width -
-                                    minMargin;
-                                if (effectiveDx > 0 &&
-                                    effectiveDx <= constraints.maxWidth) {
-                                  var skippedWeight = _getFoldedWeight(
-                                      index, IterableModifier.take);
-                                  var effectiveWeight =
-                                      effectiveDx / constraints.maxWidth -
-                                          skippedWeight;
-                                  var delta = weights[index] - effectiveWeight;
+                              var effectiveDx =
+                                  details.globalPosition.dx - leftTop.dx;
+                              if (effectiveDx > 0 &&
+                                  effectiveDx <= constraints.maxWidth) {
+                                var skippedWeight = _getFoldedWeight(
+                                    index, IterableModifier.take);
+                                var effectiveWeight =
+                                    effectiveDx / constraints.maxWidth -
+                                        skippedWeight;
+                                var delta = weights[index] - effectiveWeight;
+                                setState(() {
                                   weights[index] = effectiveWeight;
-                                  weights[index + 1] =
-                                      weights[index + 1] + delta;
-                                }
-                              });
+                                  weights[index + 1] += delta;
+                                });
+                              }
                             }
                           : null,
                       child: widget.splitterBuilder == null
@@ -301,5 +312,11 @@ class _SplittableViewState extends State<_SplittableView> {
     if (widget.onSplittingEnd != null) {
       widget.onSplittingEnd!(weights);
     }
+  }
+
+  /// Returs offset of left-top corner of `context`.
+  Offset _getLeftTopOffset() {
+    var splittableBox = context.findRenderObject() as RenderBox;
+    return splittableBox.size.topLeft(splittableBox.localToGlobal(Offset.zero));
   }
 }
