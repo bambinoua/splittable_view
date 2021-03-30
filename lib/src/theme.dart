@@ -15,17 +15,34 @@ class SplitterThemeData extends DividerThemeData {
   /// Creates a theme that can be used for [SplitterTheme].
   const SplitterThemeData({
     Color? color,
-    double space = 16.0,
-    double thickness = 0.0,
-    double indent = 0.0,
-    double endIndent = 0.0,
-    this.enableIcon = true,
+    double? space,
+    double? thickness,
+    double? indent,
+    double? endIndent,
+    this.enableIcon = false,
   }) : super(
           color: color,
           space: space,
           thickness: thickness,
           indent: indent,
           endIndent: endIndent,
+        );
+
+  /// The default [Splitter] color theme.
+  ///
+  /// This is used by [SplitterTheme.of] when no theme has been specified.
+  const SplitterThemeData.fallback({
+    double space = 8.0,
+    double thickness = 0.0,
+    double indent = 0.0,
+    double endIndent = 0.0,
+    bool enableIcon = false,
+  }) : this(
+          space: space,
+          thickness: thickness,
+          indent: indent,
+          endIndent: endIndent,
+          enableIcon: enableIcon,
         );
 
   /// Indicates whether icon is enabled on [Splitter].
@@ -42,13 +59,13 @@ class SplitterThemeData extends DividerThemeData {
     double? endIndent,
     bool? enableIcon,
   }) =>
-      copyWith(
+      SplitterThemeData(
         color: color ?? this.color,
         space: space ?? this.space,
         thickness: thickness ?? this.thickness,
         indent: indent ?? this.indent,
-        endIndent: endIndent ?? endIndent,
-        enableIcon: enableIcon ?? enableIcon,
+        endIndent: endIndent ?? this.endIndent,
+        enableIcon: enableIcon ?? this.enableIcon,
       );
 
   @override
@@ -75,20 +92,20 @@ class SplitterThemeData extends DividerThemeData {
   }
 }
 
-/// An inherited widget that defines the configuration for
-/// [Splitter]s, [SplitterDivider]s in this widget's subtree.
+/// Applies a theme to descendant [Splitter] widget.
 ///
-/// The splitter theme is honored by [Splitter] widget.
+/// Descendant widget obtain the current theme's [SplitterThemeData] object using
+/// [SplitterTheme.of]. When a widget uses [SplitterTheme.of], it is automatically
+/// rebuilt if the theme later changes, so that the changes can be applied.
 class SplitterTheme extends InheritedTheme {
-  /// Creates a splitter theme that controls the configurations for
-  /// [Splitter]s, [SplitterDivider]s in its widget subtree.
+  /// Creates a splitter theme that controls the theme configuration for [Splitter].
   const SplitterTheme({
     Key? key,
     required this.data,
     required Widget child,
   }) : super(key: key, child: child);
 
-  /// The properties for descendant [Splitter]s, [SplitterDivider]s.
+  /// The properties for descendant [Splitter].
   final SplitterThemeData data;
 
   /// The closest instance of this class's [data] value that encloses the given
@@ -96,9 +113,21 @@ class SplitterTheme extends InheritedTheme {
   static SplitterThemeData of(BuildContext context) {
     var splitterTheme =
         context.dependOnInheritedWidgetOfExactType<SplitterTheme>();
-    return splitterTheme != null
-        ? splitterTheme.data
-        : SplitterThemeData(color: Theme.of(context).dividerColor);
+    if (splitterTheme == null)
+      return SplitterThemeData.fallback()
+          .copyWith(color: Theme.of(context).dividerColor);
+    var splitterThemeData = splitterTheme.data;
+    // Set default splitter space
+    if (splitterTheme.data.space == null) {
+      splitterThemeData = splitterThemeData.copyWith(space: 8.0);
+    }
+    // Set default splitter color
+    if (splitterTheme.data.color == null) {
+      splitterThemeData = splitterThemeData.copyWith(
+          color:
+              DividerTheme.of(context).color ?? Theme.of(context).dividerColor);
+    }
+    return splitterThemeData;
   }
 
   @override
