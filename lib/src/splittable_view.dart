@@ -139,7 +139,6 @@ class _SplittableViewState extends State<_SplittableView> {
     } else if (weights.length != widget.children.length) {
       _resetWeights();
     }
-    print(weights);
   }
 
   @override
@@ -154,7 +153,10 @@ class _SplittableViewState extends State<_SplittableView> {
   Widget build(BuildContext context) {
     var mediaQuery = MediaQuery.of(context);
     var splitterCount = widget.children.length - 1;
-    var splitterThickness = SplitterTheme.of(context).space!;
+    var splitterSpace = SplitterTheme.of(context).space!;
+    var splitterCursor = widget.splitDirection.isHorizonal
+        ? SystemMouseCursors.resizeUpDown
+        : SystemMouseCursors.resizeLeftRight;
     return LayoutBuilder(
       builder: (context, constraints) {
         // Get the diffence between viewport height and available height.
@@ -166,7 +168,7 @@ class _SplittableViewState extends State<_SplittableView> {
         var effectiveDimension = (widget.splitDirection.isHorizonal
                 ? constraints.maxHeight
                 : constraints.maxWidth) -
-            splitterThickness * splitterCount;
+            splitterSpace * splitterCount;
         return Stack(
           children: [
             // Children
@@ -174,10 +176,10 @@ class _SplittableViewState extends State<_SplittableView> {
               var index = entry.key;
               var top = _getFoldedWeight(index, IterableModifier.take) *
                       effectiveDimension +
-                  splitterThickness * index;
+                  splitterSpace * index;
               var bottom = _getFoldedWeight(index + 1, IterableModifier.skip) *
                       effectiveDimension +
-                  splitterThickness * (splitterCount - index);
+                  splitterSpace * (splitterCount - index);
               var rect = widget.splitDirection.isHorizonal
                   ? Rect.fromLTRB(0.0, top, 0.0, bottom)
                   : Rect.fromLTRB(top, 0.0, bottom, 0.0);
@@ -195,24 +197,21 @@ class _SplittableViewState extends State<_SplittableView> {
               (index) {
                 var top = _getFoldedWeight(index + 1, IterableModifier.take) *
                         effectiveDimension +
-                    splitterThickness * index;
+                    splitterSpace * index;
                 var bottom =
                     _getFoldedWeight(index + 1, IterableModifier.skip) *
                             effectiveDimension +
-                        splitterThickness * (splitterCount - index - 1);
+                        splitterSpace * (splitterCount - index - 1);
                 var rect = widget.splitDirection.isHorizonal
                     ? Rect.fromLTRB(0.0, top, 0.0, bottom)
                     : Rect.fromLTRB(top, 0.0, bottom, 0.0);
-                var cursor = widget.splitDirection.isHorizonal
-                    ? SystemMouseCursors.resizeUpDown
-                    : SystemMouseCursors.resizeLeftRight;
                 return Positioned.fill(
                   left: rect.left,
                   top: rect.top,
                   right: rect.right,
                   bottom: rect.bottom,
                   child: MouseRegion(
-                    cursor: cursor,
+                    cursor: splitterCursor,
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
                       child: widget.splitterBuilder == null
