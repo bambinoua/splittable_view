@@ -214,9 +214,6 @@ class _SplittableViewState extends State<_SplittableView> {
                     cursor: splitterCursor,
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
-                      child: widget.splitterBuilder == null
-                          ? Splitter(direction: widget.splitDirection)
-                          : widget.splitterBuilder!(context),
                       onVerticalDragEnd: widget.splitDirection.isHorizonal
                           ? (details) => _onDradEnd()
                           : null,
@@ -264,6 +261,9 @@ class _SplittableViewState extends State<_SplittableView> {
                               });
                             }
                           : null,
+                      child: widget.splitterBuilder == null
+                          ? Splitter(direction: widget.splitDirection)
+                          : widget.splitterBuilder!(context),
                     ),
                   ),
                 );

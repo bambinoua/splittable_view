@@ -53,7 +53,7 @@ class Splitter extends StatelessWidget {
               var rect = direction.isHorizonal
                   ? Rect.fromLTRB(0.0,
                       (iconSize! - splitterTheme.space!) / -2 - 0.5, 0.0, 0.0)
-                  : const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0);
+                  : Rect.zero;
               Widget icon = Icon(
                 Icons.drag_handle,
                 color: splitterTheme.color,

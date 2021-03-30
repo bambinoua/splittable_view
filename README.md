@@ -3,8 +3,6 @@
 A splittable view is a widget that manages child widgets in a separated
 (split) areas. I supports more that 2 children in a single splittable view.
 
-## Getting Started
-
 ## Example
 
 ```dart
@@ -13,35 +11,29 @@ SplitterTheme(
     indent: 16.0,
     endIndent: 16.0,
     space: 12.0,
-    enableIcon: false,
   ),
-  child: SplittableView(
-    splitDirection: Axis.horizontal,
+  child: SplittableColumn(
     initialWeights: initialWeights,
     onSplittingEnd: (weights) => preferences.setStringList(
         storageKey, weights.map((ratio) => '$ratio').toList()),
     onResetWeights: () => preferences.remove(storageKey),
     children: [
-      SplittableChild(
-        child: Scrollbar(
-          child: ListView(
-            children: List.generate(
-              50,
-              (index) => ListTile(
-                title: Text('Location $index'),
-              ),
+      Scrollbar(
+        child: ListView(
+          children: List.generate(
+            50,
+            (index) => ListTile(
+              title: Text('Location $index'),
             ),
           ),
         ),
       ),
-      SplittableChild(
-        child: Scrollbar(
-          child: ListView(
-            children: List.generate(
-              50,
-              (index) => ListTile(
-                title: Text('Camera $index'),
-              ),
+      Scrollbar(
+        child: ListView(
+          children: List.generate(
+            50,
+            (index) => ListTile(
+              title: Text('Camera $index'),
             ),
           ),
         ),

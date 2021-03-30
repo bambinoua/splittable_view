@@ -113,9 +113,10 @@ class SplitterTheme extends InheritedTheme {
   static SplitterThemeData of(BuildContext context) {
     var splitterTheme =
         context.dependOnInheritedWidgetOfExactType<SplitterTheme>();
-    if (splitterTheme == null)
+    if (splitterTheme == null) {
       return SplitterThemeData.fallback()
           .copyWith(color: Theme.of(context).dividerColor);
+    }
     var splitterThemeData = splitterTheme.data;
     // Set default splitter space
     if (splitterTheme.data.space == null) {
