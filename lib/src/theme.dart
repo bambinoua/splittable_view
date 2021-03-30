@@ -5,6 +5,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// Default splitter space.
+const _space = 4.0;
+
 /// Defines the visual properties of [Splitter].
 ///
 /// Descendant widgets obtain the current [SplitterThemeData] object using
@@ -20,6 +23,8 @@ class SplitterThemeData extends DividerThemeData {
     double? indent,
     double? endIndent,
     this.enableIcon = false,
+    this.hoverable = true,
+    this.hoverColor,
   }) : super(
           color: color,
           space: space,
@@ -32,21 +37,29 @@ class SplitterThemeData extends DividerThemeData {
   ///
   /// This is used by [SplitterTheme.of] when no theme has been specified.
   const SplitterThemeData.fallback({
-    double space = 8.0,
+    double space = _space,
     double thickness = 0.0,
     double indent = 0.0,
     double endIndent = 0.0,
     bool enableIcon = false,
+    bool hoverable = true,
   }) : this(
           space: space,
           thickness: thickness,
           indent: indent,
           endIndent: endIndent,
           enableIcon: enableIcon,
+          hoverable: hoverable,
         );
 
-  /// Indicates whether icon is enabled on [Splitter].
+  /// Indicates whether icon is enabled on splitter.
   final bool? enableIcon;
+
+  /// Indicates whether splitter has hover effect.
+  final bool? hoverable;
+
+  /// Contains splitter hover color.
+  final Color? hoverColor;
 
   /// Creates a copy of this object but with the given fields replaced with the
   /// new values.
@@ -58,6 +71,8 @@ class SplitterThemeData extends DividerThemeData {
     double? indent,
     double? endIndent,
     bool? enableIcon,
+    bool? hoverable,
+    Color? hoverColor,
   }) =>
       SplitterThemeData(
         color: color ?? this.color,
@@ -66,10 +81,13 @@ class SplitterThemeData extends DividerThemeData {
         indent: indent ?? this.indent,
         endIndent: endIndent ?? this.endIndent,
         enableIcon: enableIcon ?? this.enableIcon,
+        hoverable: hoverable ?? this.hoverable,
+        hoverColor: hoverColor ?? this.hoverColor,
       );
 
   @override
-  int get hashCode => hashValues(super.hashCode, enableIcon);
+  int get hashCode =>
+      hashValues(super.hashCode, enableIcon, hoverable, hoverColor);
 
   @override
   bool operator ==(Object other) {
@@ -81,14 +99,29 @@ class SplitterThemeData extends DividerThemeData {
         other.thickness == thickness &&
         other.indent == indent &&
         other.endIndent == endIndent &&
-        other.enableIcon == enableIcon;
+        other.enableIcon == enableIcon &&
+        other.hoverable == hoverable &&
+        other.hoverColor == hoverColor;
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<bool>('enableIcon', enableIcon,
-        defaultValue: true));
+    properties
+      ..add(DiagnosticsProperty<bool>(
+        'enableIcon',
+        enableIcon,
+        defaultValue: false,
+      ))
+      ..add(DiagnosticsProperty<bool>(
+        'hoverable',
+        hoverable,
+        defaultValue: true,
+      ))
+      ..add(DiagnosticsProperty<Color>(
+        'hoverColor',
+        hoverColor,
+      ));
   }
 }
 
@@ -111,22 +144,33 @@ class SplitterTheme extends InheritedTheme {
   /// The closest instance of this class's [data] value that encloses the given
   /// context.
   static SplitterThemeData of(BuildContext context) {
+    var theme = Theme.of(context);
     var splitterTheme =
         context.dependOnInheritedWidgetOfExactType<SplitterTheme>();
     if (splitterTheme == null) {
-      return SplitterThemeData.fallback()
-          .copyWith(color: Theme.of(context).dividerColor);
+      return SplitterThemeData.fallback().copyWith(
+        color: theme.dividerColor,
+        hoverColor: theme.dividerColor,
+      );
     }
     var splitterThemeData = splitterTheme.data;
     // Set default splitter space
-    if (splitterTheme.data.space == null) {
-      splitterThemeData = splitterThemeData.copyWith(space: 8.0);
+    if (splitterThemeData.space == null) {
+      splitterThemeData = splitterThemeData.copyWith(
+        space: _space,
+      );
     }
     // Set default splitter color
-    if (splitterTheme.data.color == null) {
+    if (splitterThemeData.color == null) {
       splitterThemeData = splitterThemeData.copyWith(
-          color:
-              DividerTheme.of(context).color ?? Theme.of(context).dividerColor);
+        color: DividerTheme.of(context).color ?? theme.dividerColor,
+      );
+    }
+    // Set default hover color
+    if (splitterThemeData.hoverColor == null) {
+      splitterThemeData = splitterThemeData.copyWith(
+        hoverColor: theme.dividerColor,
+      );
     }
     return splitterThemeData;
   }
