@@ -21,22 +21,20 @@ class Splitter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var splitterTheme = SplitterTheme.of(context);
-    var preferredSize = direction.isHorizonal
+    var splitterSize = direction.isHorizonal
         ? Size.fromHeight(splitterTheme.space!)
         : Size.fromWidth(splitterTheme.space!);
-    var effectiveColor = splitterTheme.color ??
-        DividerTheme.of(context).color ??
-        Theme.of(context).dividerColor;
+    var iconSize = IconTheme.of(context).size;
     return Container(
       alignment: Alignment.center,
-      height: preferredSize.height,
-      width: preferredSize.width,
+      height: splitterSize.height,
+      width: splitterSize.width,
       child: Stack(
         children: [
           // Horizontal divider
           if (direction.isHorizonal)
             Divider(
-              color: effectiveColor,
+              color: splitterTheme.color,
               thickness: splitterTheme.thickness,
               indent: splitterTheme.indent,
               endIndent: splitterTheme.endIndent,
@@ -44,7 +42,7 @@ class Splitter extends StatelessWidget {
           // Vartical divider
           if (direction.isVertical)
             VerticalDivider(
-              color: effectiveColor,
+              color: splitterTheme.color,
               thickness: splitterTheme.thickness,
               indent: splitterTheme.indent,
               endIndent: splitterTheme.endIndent,
@@ -53,11 +51,12 @@ class Splitter extends StatelessWidget {
           if (splitterTheme.enableIcon!)
             () {
               var rect = direction.isHorizonal
-                  ? const Rect.fromLTRB(0.0, -4.0, 0.0, 0.0)
+                  ? Rect.fromLTRB(0.0,
+                      (iconSize! - splitterTheme.space!) / -2 - 0.5, 0.0, 0.0)
                   : const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0);
               Widget icon = Icon(
                 Icons.drag_handle,
-                color: effectiveColor,
+                color: splitterTheme.color,
               );
               if (direction.isVertical) {
                 icon = RotationTransition(
