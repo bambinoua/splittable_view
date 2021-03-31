@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:splittable_view/src/theme.dart';
@@ -24,7 +25,7 @@ class Splitter extends StatefulWidget {
 
 class _SplitterState extends State<Splitter> {
   /// Contains the current hover color.
-  Color? hoverColor;
+  Color? hoverColor = Colors.transparent;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +33,9 @@ class _SplitterState extends State<Splitter> {
     var splitterSize = widget.direction.isHorizonal
         ? Size.fromHeight(splitterTheme.space!)
         : Size.fromWidth(splitterTheme.space!);
-    var iconSize = IconTheme.of(context).size;
     // Create base splitter
-    Widget splitter = Container(
+    Widget splitter = AnimatedContainer(
+      duration: kTabScrollDuration,
       color: hoverColor,
       alignment: Alignment.center,
       height: splitterSize.height,
@@ -45,6 +46,7 @@ class _SplitterState extends State<Splitter> {
           if (widget.direction.isHorizonal)
             Divider(
               color: splitterTheme.color,
+              height: splitterTheme.space,
               thickness: splitterTheme.thickness,
               indent: splitterTheme.indent,
               endIndent: splitterTheme.endIndent,
@@ -53,6 +55,7 @@ class _SplitterState extends State<Splitter> {
           if (widget.direction.isVertical)
             VerticalDivider(
               color: splitterTheme.color,
+              width: splitterTheme.space,
               thickness: splitterTheme.thickness,
               indent: splitterTheme.indent,
               endIndent: splitterTheme.endIndent,
@@ -60,12 +63,13 @@ class _SplitterState extends State<Splitter> {
           // Icon
           if (splitterTheme.enableIcon!)
             () {
+              var iconSize = IconTheme.of(context).size;
+              var bias = (iconSize! - splitterTheme.space!) / -2;
               var rect = widget.direction.isHorizonal
-                  ? Rect.fromLTRB(0.0,
-                      (iconSize! - splitterTheme.space!) / -2 - 0.5, 0.0, 0.0)
+                  ? Rect.fromLTRB(0.0, bias, 0.0, 0.0)
                   : Rect.zero;
               Widget icon = Icon(
-                Icons.drag_handle,
+                Icons.trip_origin,
                 color: splitterTheme.color,
               );
               if (widget.direction.isVertical) {
@@ -87,19 +91,12 @@ class _SplitterState extends State<Splitter> {
         ],
       ),
     );
-    // Add hover effect
-    if (splitterTheme.hoverable!) {
+    // Add hover effect (only for web).
+    if (kIsWeb && splitterTheme.hoverable!) {
+      void updateColor(Color color) => setState(() => hoverColor = color);
       splitter = MouseRegion(
-        onEnter: (details) {
-          setState(() {
-            hoverColor = splitterTheme.hoverColor;
-          });
-        },
-        onExit: (details) {
-          setState(() {
-            hoverColor = null;
-          });
-        },
+        onEnter: (details) => updateColor(splitterTheme.hoverColor!),
+        onExit: (details) => updateColor(Colors.transparent),
         child: splitter,
       );
     }
