@@ -134,6 +134,9 @@ class _SplittableViewState extends State<_SplittableView> {
   /// Contains delta in pixels from splitter left edge to tapped local `dx`.
   late double tapDelta = 0.0;
 
+  /// The min and max permitted values in which the splitter can moves.
+  late List<double> splitRange;
+
   @override
   void initState() {
     super.initState();
@@ -164,21 +167,31 @@ class _SplittableViewState extends State<_SplittableView> {
         : SystemMouseCursors.resizeLeftRight;
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Effective dimension is a dimension without splitter thicknesses.
-        var effectiveDimension = (widget.splitDirection.isHorizonal
+        // Effective space is a dimension without splitter thicknesses.
+        var effectiveSpace = (widget.splitDirection.isHorizonal
                 ? constraints.maxHeight
                 : constraints.maxWidth) -
             splitterSpace * splitterCount;
+        if (widget.splitDirection.isHorizonal) {
+          var calcMaxWidth = weights
+              .map((weight) => effectiveSpace * weight)
+              .fold<double>(
+                  0, (previousValue, element) => previousValue + element);
+          print(
+              '${constraints.maxHeight} - $effectiveSpace - ${constraints.maxHeight - effectiveSpace} - $calcMaxWidth');
+          weights.asMap().entries.forEach((weight) => print(
+              '${weight.key}: ${weight.value} -> ${effectiveSpace * weight.value}'));
+        }
         return Stack(
           children: [
             // Children
             ...widget.children.asMap().entries.map<Widget>((entry) {
               var index = entry.key;
               var top = _getFoldedWeight(index, IterableModifier.take) *
-                      effectiveDimension +
+                      effectiveSpace +
                   splitterSpace * index;
               var bottom = _getFoldedWeight(index + 1, IterableModifier.skip) *
-                      effectiveDimension +
+                      effectiveSpace +
                   splitterSpace * (splitterCount - index);
               var rect = widget.splitDirection.isHorizonal
                   ? Rect.fromLTRB(0.0, top, 0.0, bottom)
@@ -196,11 +209,11 @@ class _SplittableViewState extends State<_SplittableView> {
               splitterCount,
               (index) {
                 var top = _getFoldedWeight(index + 1, IterableModifier.take) *
-                        effectiveDimension +
+                        effectiveSpace +
                     splitterSpace * index;
                 var bottom =
                     _getFoldedWeight(index + 1, IterableModifier.skip) *
-                            effectiveDimension +
+                            effectiveSpace +
                         splitterSpace * (splitterCount - index - 1);
                 var rect = widget.splitDirection.isHorizonal
                     ? Rect.fromLTRB(0.0, top, 0.0, bottom)
@@ -211,7 +224,6 @@ class _SplittableViewState extends State<_SplittableView> {
                   right: rect.right,
                   bottom: rect.bottom,
                   child: MouseRegion(
-                    opaque: false,
                     cursor: splitterCursor,
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
@@ -219,6 +231,16 @@ class _SplittableViewState extends State<_SplittableView> {
                           ? (details) {
                               leftTop = _getLeftTopOffset();
                               tapDelta = details.localPosition.dy;
+                              splitRange = [
+                                _getFoldedWeight(index, IterableModifier.take) *
+                                    effectiveSpace,
+                                _getFoldedWeight(
+                                            index + 2, IterableModifier.take) *
+                                        effectiveSpace +
+                                    splitterSpace * index +
+                                    splitterSpace / 2,
+                              ];
+                              print(splitRange);
                             }
                           : null,
                       onVerticalDragEnd: widget.splitDirection.isHorizonal
@@ -229,18 +251,26 @@ class _SplittableViewState extends State<_SplittableView> {
                               var effectiveDy = details.globalPosition.dy -
                                   leftTop.dy -
                                   tapDelta;
-                              if (effectiveDy > 0 &&
-                                  effectiveDy <= constraints.maxHeight) {
+                              if (effectiveDy > splitRange.first &&
+                                  effectiveDy <= splitRange.last) {
                                 var skippedWeight = _getFoldedWeight(
                                     index, IterableModifier.take);
                                 var effectiveWeight =
-                                    effectiveDy / constraints.maxHeight -
+                                    effectiveDy / effectiveSpace -
                                         skippedWeight;
                                 var delta = weights[index] - effectiveWeight;
                                 setState(() {
                                   weights[index] = effectiveWeight;
                                   weights[index + 1] += delta;
                                 });
+                                var maxTwoWidth = weights
+                                    .take(2)
+                                    .map((weight) => effectiveSpace * weight)
+                                    .fold<double>(
+                                        0,
+                                        (previousValue, element) =>
+                                            previousValue + element);
+                                print('move: $maxTwoWidth');
                               }
                             }
                           : null,
