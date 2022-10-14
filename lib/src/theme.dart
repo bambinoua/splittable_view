@@ -87,7 +87,7 @@ class SplitterThemeData extends DividerThemeData {
 
   @override
   int get hashCode =>
-      hashValues(super.hashCode, enableIcon, hoverable, hoverColor);
+      Object.hash(super.hashCode, enableIcon, hoverable, hoverColor);
 
   @override
   bool operator ==(Object other) {
