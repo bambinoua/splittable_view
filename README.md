@@ -2,6 +2,7 @@
 
 A splittable view is a widget that manages child widgets in a separated
 (split) areas. I supports more that 2 children in a single splittable view.
+**This was an experimental project which is not completed so it still has bugs.**
 
 ## Example
 
